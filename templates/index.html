@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>trade_ib</title>
+  <link rel="shortcut icon" href="static/ico.png" type="image/vnd.microsoft.icon" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="static/custom.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css"
+    integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn" crossorigin="anonymous"> -->
+  <style type="text/css">
+    body {
+      text-align: center;
+      /* min-width: 500px; */
+    }
+
+  </style>
+<!--  <link type="text/css" href="static/jquery.toastmessage.css" rel="stylesheet" />-->
+
+</head>
+
+<body class="p-1 container">
+  <!-- <h1 class="text-center mb-4">Order Placement</h1> -->
+  <div class="p-1">
+    <div class="row auto_trade_enable m-1">
+      
+
+      <div class="">
+        <label for="trade_enable">Auto Trade Enable: </label>
+        <input type="checkbox" id="trade_enable" name="" value="" style="margin-left: 15px;">
+      </div>
+    </div>
+
+    <div class="row trade_ticker  p-1">
+          <div class="col-md-6 col-sm-6 left">
+            <label for="tick" style="margin: 10px;">Tick: </label>
+            <select id="tick" required>
+              <!-- <option>Ticker 1</option>
+              <option>Ticker 2</option>
+              <option>Ticker 3</option> -->
+              <script>
+
+              </script>
+            </select>
+
+          </div>
+          <div class="col-md-6 col-sm-6 right">
+            <span class="trade">TRADE</span>
+            <span class="manual">MANUAL</span>
+          </div>
+    </div>
+    <div class="row order_detail">
+      <div class="col-md-4 mb-2 pt-2">
+        <button class="btn btn-primary" id="reverse" style="width: 120px; height: 40px;">REVERSE</button>
+      </div>
+      <div class="col-md-4 mb-2  pt-2">
+        <div class="p-1">
+        <button class="btn btn-danger" id="sell" style="width: 120px; height: 40px;">SELL</button>
+        </div>
+        <div class="p-1">
+        <button class="btn btn-success" id="buy" style="width: 120px; height: 40px;">BUY</button>
+        </div>
+        <div class="p-1">
+        <button class="btn btn-warning" id="flatten" style="width: 120px; height: 40px;">FLATTEN</button>
+        </div>
+      </div>
+      <div class="col-md-4 mt-2 pt-2">
+        <div class="form-inline">
+          <label for="contract_quantity" style="margin: 5px;">CONTRACT</label>
+          <input type="text" name="" id="contract_quantity" style="margin: 5px; border:none; background-color: darkgray;" value="-1" readonly>
+        </div>
+        <div class="form-inline">
+          <label for="order" style="margin: 5px;">ORDER</label>
+          <input type="text" name="" id="order" style="margin: 5px; border:none; background-color: darkgray;" readonly>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-1">
+      <input type="text" name="" id="log" value="Ready..."  style="border:none; width: 100%; text-align:center;" readonly>
+    </div>
+    <br><br>
+    <div class="">
+          <div class="p-1" style="text-align: center; max-height: 150px; overflow:auto;">
+                <table id="history" style="width:100%; align: center;">
+                  <thead>
+                      <tr>
+                        <th style="width: 35%;">DATE/TIME</th>
+                        <th style="width: 13%;">TICKER</th>
+                        <th style="width: 13%;">BUY/SELL</th>
+                        <th style="width: 13%;">QTY</th>
+                        <th style="width: 13%;">PRICE</th>
+                        <th style="width: 13%;">MAN/AUTO</th>
+                      </tr>
+                  </thead>
+                  <tbody id="history_data">
+
+                  </tbody>
+                </table>
+          </div>
+    </div>
+  </div>
+
+
+  <script src="static/main.js"></script>
+  <!-- <script src="static/utils.js"></script> -->
+  
+
+
+  <!-- <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js" crossorigin="anonymous"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"
+    integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF"
+    crossorigin="anonymous"></script>
+  
+  <script src="static/bootstrap.min.js"></script>
+  <script src="static/jquery.min.js"></script>
+  <script src="static/utils.js"></script>
+
+  <script src="static/jquery-1.9.1.min.js"></script> -->
+
+</body>
+
+</html>
