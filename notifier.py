@@ -13,7 +13,8 @@ def send_notification_api(data):
         r = requests.post(url=slack_webhook_url, json=sms_data)
         if r.status_code == 200:
             return "Slack notification successfully sent."
-    except:
+    except Exception as e:
+        print(repr(e))
         pass
     return "Slack notification failed."
     # return r.text

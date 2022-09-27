@@ -47,6 +47,7 @@ def read_positions():  # read all accounts positions and return DataFrame with i
     time.sleep(3)
     current_positions = app.all_positions
     current_positions.set_index('Account', inplace=True, drop=True)  # set all_positions DataFrame index to "Account"
+    print(current_positions)
 
     app.disconnect()
 

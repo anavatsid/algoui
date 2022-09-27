@@ -1,8 +1,6 @@
 .auto_trade_enable {justify-content: right;}
-.trade_ticker .left{ width: 50%;}
-.trade_ticker .right{ width: 50%; margin: auto;}
+/* .trade_ticker .left{ width: 50%;}
+.trade_ticker .right{ width: 50%; margin: auto;} */
 .trade_ticker .right .trade{ font-size: 24px; font-weight: 700; } 
-.order_detail>div:nth-child(1) .btn {width: 25%;}
-.order_detail>div:nth-child(2) {display: flex; justify-content: space-between;}
-.order_detail>div:nth-child(2) .btn {width: 25%;}
 .order_detail .form-inline {justify-content: space-between;}
+.right {justify-content: space-between;}

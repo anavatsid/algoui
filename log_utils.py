@@ -5,7 +5,7 @@ from notifier import send_notification_api
 
 meta_log = "log/meta.log"
 def export_log(msg, log_path, slack_msg: str = "", is_notified=False):
-    # now = datetime.now().strftime("%m-%d-%Y %H:%M:%S")
+    # now = datetime.now().strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
     # tm_msg = '{}\t{}\t{}'.format(ticker_name, now, msg)
     print(msg)
     if slack_msg is None or slack_msg.strip() == "":
@@ -16,7 +16,7 @@ def export_log(msg, log_path, slack_msg: str = "", is_notified=False):
 
         if is_notified:
             ret = send_notification_api(slack_msg)
-            f.write('{}'.format(ret))
+            f.write('{}\n'.format(ret))
 
 
 def export_meta(msg):

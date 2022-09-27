@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>trade_ib</title>
+  <link rel="shortcut icon" href="static/ico.png" type="image/vnd.microsoft.icon" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="static/custom.css">
+  <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js" crossorigin="anonymous"></script>
+  <script src="static/jquery-1.9.1.min.js" crossorigin="anonymous"></script>
+  <script src="static/jquery.min.js" crossorigin="anonymous"></script>
+  <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> -->
+
+  <script src="static/bootstrap.min.js" crossorigin="anonymous"></script>
+
+  <script src="static/utils.js"></script>
+  <script src="static/main.js"></script>
+
+  <style type="text/css">
+    body {
+      text-align: center;
+      /* min-width: 500px; */
+    }
+  </style>
+<!--  <link type="text/css" href="static/jquery.toastmessage.css" rel="stylesheet" />-->
+
+</head>
+
+<body class="p-1 container">
+
+  <!-- <h1 class="text-center mb-4">Order Placement</h1> -->
+  <div class="p-1">
+    <div class="row auto_trade_enable m-1">
+      
+
+      <div class="col-6" style="text-align: left;">
+        <!-- <label for="trade_enable">Auto Trade Enable: </label>
+        <input type="checkbox" id="trade_enable" name="" value="" style="margin-left: 15px;"> -->
+        <!-- <button>History</button> -->
+
+      </div>
+      <div class="col-6" style="text-align: right;">
+        <!-- <input type="button"  id="history" style="background-color:rgb(239, 238, 245);" value="History"/> -->
+        <a href="/" id="return">Return</a>
+      </div>
+    </div>
+    <div class="row m-1">
+      <div class="p-1" style="text-align: center;">
+        <div class="" style="text-align: center;">
+          <h3 style="text-align: center;">Recent History</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="">
+
+          <div class="p-1" style="text-align: center; overflow:auto;">
+                <table id="history" style="width:100%; background-color: black; color: white;">
+                  <thead>
+                      <tr>
+                        <th style="width: 35%;">DATE/TIME</th>
+                        <th style="width: 13%;">TICKER</th>
+                        <th style="width: 13%;">BUY/SELL</th>
+                        <th style="width: 13%;">QTY</th>
+                        <th style="width: 13%;">PRICE</th>
+                        <th style="width: 13%;">MAN/AUTO</th>
+                      </tr>
+                  </thead>
+                  <tbody id="history_data">
+
+                  </tbody>
+                </table>
+          </div>
+
+    </div>
+    <script>
+
+        function update_table(_data_) {
+            table_element = document.getElementById("history");
+            table_body = document.getElementById("history_data");
+            // table_body.innerHTML = "";
+            for (i in _data_) {
+                row = _data_[i];
+                row_num = table_body.rows.length;
+                tr = table_body.insertRow(row_num);
+                for (j in row) {
+                    td = tr.insertCell();
+                    td.innerHTML = row[j];
+                };
+            };
+            rows = table_element.rows.length;
+        };
+        var command = {
+            command: "",
+            message: {}
+        };
+        command["command"] = "HISTORY";
+        command["message"] = {};
+        $.ajax({
+            url: "/get_request",
+            type: "POST",
+            contentType:"application/json; charset=utf-8",
+            data: JSON.stringify(command),
+            dataType: "json",
+            success: function (response) {
+                if (response["status"] == "success") {
+                    if (command["command"] == "HISTORY") {
+                        array_hist = response["message"][0];
+                        update_table(array_hist);
+                    };
+                }
+                else {
+                    alert(response["message"][0]);
+                }
+            },
+            error: function (request, response) {
+                alert("Server Error. Try again later.");
+                return ;
+            },
+            complete: function(response) {
+            }
+        });    
+        </script>
+  </div>
+
+</body>
+
+</html>

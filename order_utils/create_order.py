@@ -21,6 +21,7 @@ def get_cfg(config_path):
         "contract": dict(config.items("contract")),
         "order": dict(config.items("order"))
     }
+    # print(f"{_dict_=}")
     return _dict_
 
 
@@ -35,11 +36,12 @@ class OrderAPP(EWrapper, EClient):
                                                        # "Quantity", "Status"])
         self.execDetails_msg = []  # pd.DataFrame([], columns=["ReqId", "Symbol", "Sec Type", "Currency", "Exec Id",
                                                          # "Exec OrderId", "Exec Shares", "Last Liquidity"])
+        self.success = False
 
     def error(self, reqId , errorCode, errorString):
         msg = "Error: {}, {}, {}".format(reqId, errorCode, errorString)
         # length = len(self.error_msg)
-        now = datetime.now().strftime("%m-%d-%Y %H:%M:%S")
+        now = datetime.now().strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
         self.error_msg.append([now, msg])
 
     def nextValidId(self, orderId ):
@@ -50,16 +52,20 @@ class OrderAPP(EWrapper, EClient):
                     parentId, lastFillPrice, clientId, whyHeld, mktCapPrice):
         msg = "OrderStatus. Id: {} Status: {} Filled: {} Remaining: {} LastFillPrice: {}".format(orderId, status, filled, remaining, lastFillPrice)
         # length = len(self.orderStatus_msg)
-        now = datetime.now().strftime("%m-%d-%Y %H:%M:%S")
+        now = datetime.now().strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
 
         self.orderStatus_msg.append([now, msg])
+        # print("msg: ", msg)
+        if status == "Filled":
+            self.success = True
+            self.stop()
 
     def openOrder(self, orderId, contract, order, orderState):
         msg = "OpenOrder. ID: {}, {}, {} @ {} : {} {} {} {}".format(orderId, contract.symbol, contract.secType,
                                                                     contract.exchange, order.action, order.orderType,
                                                                     order.totalQuantity, orderState.status)
         # length = len(self.openOrder_msg)
-        now = datetime.now().strftime("%m-%d-%Y %H:%M:%S")
+        now = datetime.now().strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
 
         self.openOrder_msg.append([now, msg])
 
@@ -69,13 +75,13 @@ class OrderAPP(EWrapper, EClient):
                                                                    execution.orderId, execution.shares,
                                                                    execution.lastLiquidity)
         # length = len(self.execDetails_msg)
-        now = datetime.now().strftime("%m-%d-%Y %H:%M:%S")
+        now = datetime.now().strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
 
         self.execDetails_msg.append([now, msg])
 
     def start(self):
         contract = Contract()
-        print(self.contract_config)
+        print("contract config = ", self.contract_config)
         contract.symbol = self.contract_config["symbol"]
         contract.secType = self.contract_config["sectype"]
         contract.exchange = self.contract_config["exchange"]
@@ -85,6 +91,7 @@ class OrderAPP(EWrapper, EClient):
         # contract.waitToPlaceTrade = self.contract_config["waittoplacetrade"]
 
         order = Order()
+        print("order config = ", self.order_config)
         order.action = self.order_config["action"]
         order.totalQuantity = self.order_config["qty"]
         if "ordertype" in self.order_config:
@@ -108,10 +115,13 @@ def place_order(contract_dict: dict, order_dict: dict):
     app.nextOrderId = 0
     app.connect("127.0.0.1", 4002, 11)
     # Start the socket in a thread
-    api_thread = Thread(target=app.run, daemon=True)
-    api_thread.start()
-    delay_time = int(contract_dict["waittoplacetrade"])
-    time.sleep(delay_time)  # Sleep interval to allow time for connection to server
+    # api_thread = Thread(target=app.run, daemon=True)
+    # api_thread.start()
+    # delay_time = int(contract_dict["waittoplacetrade"])
+    # time.sleep(5)  # Sleep interval to allow time for connection to server
+    Timer(5, app.stop).start()
+    app.run()
+
 
     order_status = app.orderStatus_msg  # .drop_duplicates(ignore_index=True)
     open_order = app.openOrder_msg
@@ -122,7 +132,7 @@ def place_order(contract_dict: dict, order_dict: dict):
     # print(f"{open_order=}")
     # print(f"{exec_detail=}")
     # print(f"{errors=}")
-    return open_order, order_status, exec_detail, errors
+    return app.success, open_order, order_status, exec_detail, errors
 
 
 if __name__ == "__main__":

@@ -1,10 +1,6 @@
-opencv-python==4.6.0.66
 python-dotenv==0.20.0
 requests
-mss
-pillow
-pyqt5
+pandas
 ibapi
 flask
 flask-restful
-pandas
