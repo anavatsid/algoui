@@ -277,12 +277,13 @@ function disable_ui() {
         };
 
         const data = {
+            action: "REVERSE",
             ticker: document.getElementById("tick").value,
             trade_enabled: $("#trade_enable")[0].checked,
             position: cur_postion,
             order_qty: input_qty,
         };
-        _command_["command"] = "REVERSE";
+        _command_["command"] = "MANUAL_ORDER";
         _command_["message"] = data;
 
         disable_ui();
@@ -307,12 +308,13 @@ function disable_ui() {
         };
         
         const data = {
+            action: "BUY",
             ticker: document.getElementById("tick").value,
             trade_enabled: $("#trade_enable")[0].checked,
             position: cur_postion,
             order_qty: input_qty,
         };
-        _command_["command"] = "BUY";
+        _command_["command"] = "MANUAL_ORDER";
         _command_["message"] = data;
         disable_ui();
         communicate(_command_);
@@ -334,13 +336,14 @@ function disable_ui() {
         };
         
         const data = {
+            action: "SELL",
             ticker: document.getElementById("tick").value,
             trade_enabled: $("#trade_enable")[0].checked,
             position: cur_postion,
             order_qty: input_qty,
         };
 
-        _command_["command"] = "SELL";
+        _command_["command"] = "MANUAL_ORDER";
         _command_["message"] = data;
         disable_ui();
         communicate(_command_);
@@ -361,12 +364,13 @@ function disable_ui() {
 
         };
         const data = {
+            action: "FLATTEN",
             ticker: document.getElementById("tick").value,
             trade_enabled: $("#trade_enable")[0].checked,
             position: cur_postion,
             order_qty: input_qty,
         };
-        _command_["command"] = "FLATTEN";
+        _command_["command"] = "MANUAL_ORDER";
         _command_["message"] = data;
         disable_ui();
         console.log(_command_);

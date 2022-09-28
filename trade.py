@@ -8,6 +8,20 @@ from order_utils.read_status import read_positions
 from log_utils import export_meta
 
 
+def get_target_position(target_symbol):
+        current_positions = read_positions()
+        print("current_positions:\n", current_positions)
+        if len(current_positions) != 0:
+            try:
+                target_pos = int(current_positions.Quantity[current_positions["Symbol"] == target_symbol].tolist()[0])
+                # print(f"{target_pos=}")
+            except:
+                target_pos = 0
+        else:
+            target_pos = 0
+        return target_pos
+
+
 def parse_parameter(direction, action, qty=None, config_qty=0):
 
     default_direct = ["LS", "LC", "SC"]
@@ -26,7 +40,7 @@ def parse_parameter(direction, action, qty=None, config_qty=0):
             if qty is None or qty == 0:
                 return True, config_qty
             elif qty > 0:
-                return False, qty * 2
+                return True, qty * 2
             else:
                 return False, None
     elif direction == "LC":
@@ -89,7 +103,7 @@ def parse_parameter_manual(action, quantity, cur_position):
         return True, real_action, real_qty
 
 
-def process_trade_manual(cfg_dict: dict = None, cfg_file=None): # , is_auto=True):
+def process_trade(cfg_dict: dict = None, cfg_file=None, is_auto=False):
     res_value = {
         "success": False,
         "description": "",
@@ -122,37 +136,63 @@ def process_trade_manual(cfg_dict: dict = None, cfg_file=None): # , is_auto=True
 
         order_dict = predefined_order_dict["order"]
         order_dict["action"] = action
-
-    input_qty = cfg_dict["order"]["quantity"]
-    cur_position = cfg_dict["order"]["position"]
-
-    is_needed, real_action, real_qty = parse_parameter_manual(action, quantity=input_qty, cur_position=cur_position)
-    print(is_needed, real_action, real_qty)
+    if not is_auto:
+        input_qty = cfg_dict["order"]["quantity"]
+        cur_position = cfg_dict["order"]["position"]
+        is_needed, real_action, real_qty = parse_parameter_manual(action, quantity=input_qty, cur_position=cur_position)
+        action_method = "MANUAL"
+    else:
+        config_qty = int(predefined_order_dict["order"]["qty"])
+        direction = predefined_order_dict["order"]["direction"]
+        cur_position = get_target_position(contract_dict["symbol"])
+        is_needed, real_qty = parse_parameter(direction, action, cur_position, config_qty)
+        real_action = action
+        action_method = "AUTO"
+        
+    # print(is_needed, real_action, real_qty)
     if is_needed:
         order_dict["qty"] = real_qty
         order_dict["action"] = real_action
         st = datetime.now()
-        success, open_order, order_status, exec_detail, errors = place_order(contract_dict, order_dict)
+        try:
+            success, open_order, order_status, exec_detail, errors, final_status = place_order(contract_dict, order_dict)
+        except Exception as err:
+            print(repr(err))
         print(datetime.now() - st)
         total_log = open_order + order_status + exec_detail + errors
         total_log.sort(key=lambda row: (row[0]))
         log_msg = "\n".join([x[0] + "\t" + x[1] for x in total_log])
         now = datetime.now().strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
+
+
         if success:
 
-            slack_msg = "Order pre submitted to IB\n{}\t{}".format(order_status[-1][0], order_status[-1][1])
+            slack_msg = "{}\t{}\tOrder pre submitted to IB\n{}\t{}".format(contract_dict["symbol"], action_method, order_status[-1][0], order_status[-1][1])
             price = order_status[-1][1].split()[-1]
-            meta_info = "{}\t{}\t{}\t{}\t{}\tMANUAL".format(now, contract_dict["symbol"], order_dict["action"],
-                                                            real_qty, price)
+
+            meta_info = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(now, contract_dict["symbol"], order_dict["action"],
+                                                            real_qty, price, action_method, final_status)
             export_meta(meta_info)
             if real_action == "SELL":
                 target_pos = cur_position - real_qty
             else:
                 target_pos = cur_position + real_qty
             res_value["success"] = True
-        
+
         else:
-            slack_msg = "{}\t{}".format(errors[-1][0], errors[-1][1])
+            if len(order_status) != 0:
+                price = order_status[-1][1].split()[-1]
+                try:
+                    price = float(price)
+                except:
+                    price = "---"
+            else:
+                price = "---"
+
+            meta_info = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(now, contract_dict["symbol"], order_dict["action"],
+                                                real_qty, price, action_method, final_status)
+            export_meta(meta_info)
+            slack_msg = "{}\t{}\t{}\t{}".format(contract_dict["symbol"], action_method, errors[-1][0], errors[-1][1])
             target_pos = cur_position
         # time.sleep(1)
         # current_positions = read_positions()
@@ -171,9 +211,13 @@ def process_trade_manual(cfg_dict: dict = None, cfg_file=None): # , is_auto=True
 
         return res_value
     else:
+        price = "---"
+        meta_info = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(now, contract_dict["symbol"], order_dict["action"],
+                                    real_qty, price, action_method, "Ignored")
+        export_meta(meta_info)
         ignore_msg = "Trade Ignored due to already existing position"
         now = datetime.now().strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
-        log_msg = "{}\tSymbol: {}\tSec Type{}\tAction: {}\tQTY: {}" \
+        log_msg = "{}\tSymbol: {}\tSec Type: {}\tAction: {}\tQTY: {}" \
                     "\t{}".format(now, contract_dict["symbol"], contract_dict["sectype"],
                                 order_dict["action"], order_dict["qty"], ignore_msg)
         res_value["description"] = log_msg

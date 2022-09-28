@@ -37,6 +37,7 @@ class OrderAPP(EWrapper, EClient):
         self.execDetails_msg = []  # pd.DataFrame([], columns=["ReqId", "Symbol", "Sec Type", "Currency", "Exec Id",
                                                          # "Exec OrderId", "Exec Shares", "Last Liquidity"])
         self.success = False
+        self.final_status = "Failed"
 
     def error(self, reqId , errorCode, errorString):
         msg = "Error: {}, {}, {}".format(reqId, errorCode, errorString)
@@ -55,6 +56,8 @@ class OrderAPP(EWrapper, EClient):
         now = datetime.now().strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
 
         self.orderStatus_msg.append([now, msg])
+        self.final_status = status
+
         # print("msg: ", msg)
         if status == "Filled":
             self.success = True
@@ -132,7 +135,7 @@ def place_order(contract_dict: dict, order_dict: dict):
     # print(f"{open_order=}")
     # print(f"{exec_detail=}")
     # print(f"{errors=}")
-    return app.success, open_order, order_status, exec_detail, errors
+    return app.success, open_order, order_status, exec_detail, errors, app.final_status
 
 
 if __name__ == "__main__":

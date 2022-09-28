@@ -7,7 +7,7 @@ from flask_restful import Resource
 import configparser
 from order_utils.create_order import get_cfg
 from log_utils import export_log, read_meta
-from trade import process_trade_manual, read_positions
+from trade import process_trade, read_positions
 
 
 log_folder = "log"
@@ -46,6 +46,7 @@ def change_global(flag):
     with open(global_trade_file, "w") as cfg:
         config.write(cfg)
 
+
 class MainReceiver(Resource):
     def __init__(self):
         self.response_data = {
@@ -68,8 +69,9 @@ class MainReceiver(Resource):
             response = json.dumps(self.response_data, indent=2)
             return make_response(response, 200)
 
-        if command == 'REVERSE':
+        if command == 'MANUAL_ORDER':
             data = content['message']
+            action_type = data["action"]
             cfg_file = os.path.join(trade_config_dir, data["ticker"])
             if not os.path.exists(cfg_file):
                 res_data = ["Config File not Exists."]
@@ -86,7 +88,7 @@ class MainReceiver(Resource):
                         cfg_dict = {
                             "contract": {},
                             "order": {
-                                "action": command,
+                                "action": action_type,
                                 "position": int(data["position"]),
                                 "quantity": int(data["order_qty"])
                             }
@@ -96,152 +98,155 @@ class MainReceiver(Resource):
                         log_file = ticker_name + "_" + datetime.now().strftime("%m_%d_%Y") + ".log"
                         log_path = os.path.join(log_folder, log_file)
 
-                        response_data = process_trade_manual(cfg_dict, cfg_file)
+                        response_data = process_trade(cfg_dict, cfg_file)
                         if response_data["success"]:
                             tm_msg = response_data["description"]
                             slack_msg = response_data["slack_msg"]
                             export_log(tm_msg, log_path, slack_msg, True)
                             self.response_data["status"] = "success"
                             cur_pos = response_data["current_pos"]
-                            res_data = ["{} Order Placed Successfully.".format(command), cur_pos]
+                            res_data = ["{} Order Placed Successfully.".format(action_type), cur_pos]
                         else:
                             slack_msg = response_data["slack_msg"]
                             tm_msg = response_data["description"]
                             export_log(tm_msg, log_path)
-                            res_data = ["{} Order: {}".format(command, tm_msg.split("\t")[-1])]
+                            res_data = ["{} Order: {}".format(action_type, tm_msg.split("\t")[-1])]
                     except Exception as err:
                         print(repr(err))
                         res_data = ["Failed to place order."]
-
-        elif command == 'BUY':
-            data = content['message']
-            cfg_file = os.path.join(trade_config_dir, data["ticker"])
-            if not os.path.exists(cfg_file):
-                res_data = ["Config File not Exists."]
-            else:
-                original_config_dict = {}
-                try:
-                    original_config_dict = get_cfg(cfg_file)
-                except:
-                    res_data = ["Invalid Config File."]
+        
+        #
+        # elif command == 'BUY':
+        #     data = content['message']
+        #     cfg_file = os.path.join(trade_config_dir, data["ticker"])
+        #     if not os.path.exists(cfg_file):
+        #         res_data = ["Config File not Exists."]
+        #     else:
+        #         original_config_dict = {}
+        #         try:
+        #             original_config_dict = get_cfg(cfg_file)
+        #         except:
+        #             res_data = ["Invalid Config File."]
                     
-                print("original_config_dict=", original_config_dict)
+        #         print("original_config_dict=", original_config_dict)
 
-                    # print(original_config_dict)
-                if original_config_dict != {}:
-                    try:
-                        cfg_dict = {
-                            "contract": {},
-                            "order": {
-                                "action": command,
-                                "position": int(data["position"]),
-                                "quantity": int(data["order_qty"])
-                            }
-                        }
-                        ticker_name = original_config_dict["contract"]["symbol"]
-                        log_file = ticker_name + "_" + datetime.now().strftime("%m_%d_%Y") + ".log"
-                        log_path = os.path.join(log_folder, log_file)
+        #             # print(original_config_dict)
+        #         if original_config_dict != {}:
+        #             try:
+        #                 cfg_dict = {
+        #                     "contract": {},
+        #                     "order": {
+        #                         "action": command,
+        #                         "position": int(data["position"]),
+        #                         "quantity": int(data["order_qty"])
+        #                     }
+        #                 }
+        #                 ticker_name = original_config_dict["contract"]["symbol"]
+        #                 log_file = ticker_name + "_" + datetime.now().strftime("%m_%d_%Y") + ".log"
+        #                 log_path = os.path.join(log_folder, log_file)
 
-                        response_data = process_trade_manual(cfg_dict, cfg_file)
-                        if response_data["success"]:
-                            tm_msg = response_data["description"]
-                            slack_msg = response_data["slack_msg"]
-                            export_log(tm_msg, log_path, slack_msg, True)
-                            self.response_data["status"] = "success"
-                            cur_pos = response_data["current_pos"]
-                            res_data = ["{} Order Placed Successfully.".format(command), cur_pos]
-                        else:
-                            tm_msg = response_data["description"]
-                            export_log(tm_msg, log_path)
-                            res_data = ["{} Order: {}".format(command, tm_msg.split("\t")[-1])]
-                    except:
-                        res_data = ["Failed to place order."]
+        #                 response_data = process_trade(cfg_dict, cfg_file)
+        #                 if response_data["success"]:
+        #                     tm_msg = response_data["description"]
+        #                     slack_msg = response_data["slack_msg"]
+        #                     export_log(tm_msg, log_path, slack_msg, True)
+        #                     self.response_data["status"] = "success"
+        #                     cur_pos = response_data["current_pos"]
+        #                     res_data = ["{} Order Placed Successfully.".format(command), cur_pos]
+        #                 else:
+        #                     tm_msg = response_data["description"]
+        #                     export_log(tm_msg, log_path)
+        #                     res_data = ["{} Order: {}".format(command, tm_msg.split("\t")[-1])]
+        #             except:
+        #                 res_data = ["Failed to place order."]
 
-        elif command == 'SELL':
-            data = content['message']
-            cfg_file = os.path.join(trade_config_dir, data["ticker"])
-            if not os.path.exists(cfg_file):
-                res_data = ["Config File not Exists."]
-            else:
-                original_config_dict = {}
-                try:
-                    original_config_dict = get_cfg(cfg_file)
-                    print("original_config_dict=", original_config_dict)
+        # elif command == 'SELL':
+        #     data = content['message']
+        #     cfg_file = os.path.join(trade_config_dir, data["ticker"])
+        #     if not os.path.exists(cfg_file):
+        #         res_data = ["Config File not Exists."]
+        #     else:
+        #         original_config_dict = {}
+        #         try:
+        #             original_config_dict = get_cfg(cfg_file)
+        #             print("original_config_dict=", original_config_dict)
 
-                except:
-                    res_data = ["Invalid Config File."]
-                    # print(original_config_dict)
-                if original_config_dict != {}:
-                    try:
-                        cfg_dict = {
-                            "contract": {},
-                            "order": {
-                                "action": command,
-                                "position": int(data["position"]),
-                                "quantity": int(data["order_qty"])
-                            }
-                        }
-                        ticker_name = original_config_dict["contract"]["symbol"]
-                        log_file = ticker_name + "_" + datetime.now().strftime("%m_%d_%Y") + ".log"
-                        log_path = os.path.join(log_folder, log_file)
+        #         except:
+        #             res_data = ["Invalid Config File."]
+        #             # print(original_config_dict)
+        #         if original_config_dict != {}:
+        #             try:
+        #                 cfg_dict = {
+        #                     "contract": {},
+        #                     "order": {
+        #                         "action": command,
+        #                         "position": int(data["position"]),
+        #                         "quantity": int(data["order_qty"])
+        #                     }
+        #                 }
+        #                 ticker_name = original_config_dict["contract"]["symbol"]
+        #                 log_file = ticker_name + "_" + datetime.now().strftime("%m_%d_%Y") + ".log"
+        #                 log_path = os.path.join(log_folder, log_file)
 
-                        response_data = process_trade_manual(cfg_dict, cfg_file)
-                        if response_data["success"]:
-                            tm_msg = response_data["description"]
-                            slack_msg = response_data["slack_msg"]
-                            export_log(tm_msg, log_path, slack_msg, True)
-                            self.response_data["status"] = "success"
-                            cur_pos = response_data["current_pos"]
-                            res_data = ["{} Order Placed Successfully.".format(command), cur_pos]
-                        else:
-                            tm_msg = response_data["description"]
-                            export_log(tm_msg, log_path)
-                            res_data = ["{} Order: {}".format(command, tm_msg.split("\t")[-1])]
-                    except:
-                        res_data = ["Failed to place order."]
+        #                 response_data = process_trade(cfg_dict, cfg_file)
+        #                 if response_data["success"]:
+        #                     tm_msg = response_data["description"]
+        #                     slack_msg = response_data["slack_msg"]
+        #                     export_log(tm_msg, log_path, slack_msg, True)
+        #                     self.response_data["status"] = "success"
+        #                     cur_pos = response_data["current_pos"]
+        #                     res_data = ["{} Order Placed Successfully.".format(command), cur_pos]
+        #                 else:
+        #                     tm_msg = response_data["description"]
+        #                     export_log(tm_msg, log_path)
+        #                     res_data = ["{} Order: {}".format(command, tm_msg.split("\t")[-1])]
+        #             except:
+        #                 res_data = ["Failed to place order."]
 
-        elif command == 'FLATTEN':
-            data = content['message']
-            cfg_file = os.path.join(trade_config_dir, data["ticker"])
-            if not os.path.exists(cfg_file):
-                res_data = ["Config File not Exists."]
-            else:
-                original_config_dict = {}
-                try:
-                    original_config_dict = get_cfg(cfg_file)
-                except:
-                    res_data = ["Invalid Config File."]
-                    # print(original_config_dict)
-                if original_config_dict != {}:
-                    try:
-                        cfg_dict = {
-                            "contract": {},
-                            "order": {
-                                "action": command,
-                                "position": int(data["position"]),
-                                "quantity": int(data["order_qty"])
-                            }
-                        }
-                        # print(cfg_dict)
-                        ticker_name = original_config_dict["contract"]["symbol"]
-                        log_file = ticker_name + "_" + datetime.now().strftime("%m_%d_%Y") + ".log"
-                        log_path = os.path.join(log_folder, log_file)
+        # elif command == 'FLATTEN':
+        #     data = content['message']
+        #     cfg_file = os.path.join(trade_config_dir, data["ticker"])
+        #     if not os.path.exists(cfg_file):
+        #         res_data = ["Config File not Exists."]
+        #     else:
+        #         original_config_dict = {}
+        #         try:
+        #             original_config_dict = get_cfg(cfg_file)
+        #         except:
+        #             res_data = ["Invalid Config File."]
+        #             # print(original_config_dict)
+        #         if original_config_dict != {}:
+        #             try:
+        #                 cfg_dict = {
+        #                     "contract": {},
+        #                     "order": {
+        #                         "action": command,
+        #                         "position": int(data["position"]),
+        #                         "quantity": int(data["order_qty"])
+        #                     }
+        #                 }
+        #                 # print(cfg_dict)
+        #                 ticker_name = original_config_dict["contract"]["symbol"]
+        #                 log_file = ticker_name + "_" + datetime.now().strftime("%m_%d_%Y") + ".log"
+        #                 log_path = os.path.join(log_folder, log_file)
 
-                        response_data = process_trade_manual(cfg_dict, cfg_file)
-                        if response_data["success"]:
-                            tm_msg = response_data["description"]
-                            slack_msg = response_data["slack_msg"]
-                            export_log(tm_msg, log_path, slack_msg, True)
-                            self.response_data["status"] = "success"
-                            cur_pos = response_data["current_pos"]
-                            res_data = ["{} Order Placed Successfully.".format(command), cur_pos]
-                        else:
-                            tm_msg = response_data["description"]
-                            export_log(tm_msg, log_path)
-                            res_data = ["{} Order: {}".format(command, tm_msg.split("\t")[-1])]
-                    except Exception as err:
-                        print(repr(err))
-                        res_data = ["Failed to place order."]
+        #                 response_data = process_trade(cfg_dict, cfg_file)
+        #                 if response_data["success"]:
+        #                     tm_msg = response_data["description"]
+        #                     slack_msg = response_data["slack_msg"]
+        #                     export_log(tm_msg, log_path, slack_msg, True)
+        #                     self.response_data["status"] = "success"
+        #                     cur_pos = response_data["current_pos"]
+        #                     res_data = ["{} Order Placed Successfully.".format(command), cur_pos]
+        #                 else:
+        #                     tm_msg = response_data["description"]
+        #                     export_log(tm_msg, log_path)
+        #                     res_data = ["{} Order: {}".format(command, tm_msg.split("\t")[-1])]
+        #             except Exception as err:
+        #                 print(repr(err))
+        #                 res_data = ["Failed to place order."]
+
+        #
 
         elif command == 'INITIALIZE':
             data = content['message']
@@ -308,6 +313,107 @@ class MainReceiver(Resource):
             # print(table)
             res_data = [table]
             self.response_data["status"] = "success"
+        else:
+            res_data = ["Invalid operation."]
+
+        self.response_data["message"] = res_data
+        response = json.dumps(self.response_data, indent=2)
+        return make_response(response, 200)
+
+
+class AutoOrder(Resource):
+    def __init__(self):
+        self.response_data = {
+            'status': 'fail',
+            'message': ['invalid payload'],
+        }
+
+    def post(self):
+        is_parse = request.is_json
+        if not is_parse:
+            self.response_data["message"] = ['Failed to receive data.']
+            response = json.dumps(self.response_data, indent=2)
+            return make_response(response, 200)
+
+        content = request.get_json()
+        try:
+            command = content['command']
+        except Exception as error:
+            self.response_data["message"] = [repr(error)]
+            response = json.dumps(self.response_data, indent=2)
+            return make_response(response, 200)
+        
+        if command == 'PLACE_ORDER':
+            data = content['message']
+            cfg_file = os.path.join(trade_config_dir, data["ticker"])
+            signal = data["signal"]
+            if not os.path.exists(cfg_file):
+                res_data = ["Config File not Exists."]
+            else:
+                original_config_dict = {}
+                try:
+                    original_config_dict = get_cfg(cfg_file)
+                except:
+                    res_data = ["Invalid Config File."]
+                    
+                print("original_config_dict=", original_config_dict)
+
+                if original_config_dict != {}:
+                    try:
+                        if signal == "L":
+                            action = "BUY"
+                        else:
+                            action = "SELL"
+                        cfg_dict = {
+                            "contract": {},
+                            "order": {
+                                "action": action,                                
+                            }
+                        }
+                        ticker_name = original_config_dict["contract"]["symbol"]
+                        log_file = ticker_name + "_" + datetime.now().strftime("%m_%d_%Y") + ".log"
+                        log_path = os.path.join(log_folder, log_file)
+                        
+                        if get_global_flag():
+                            response_data = process_trade(cfg_dict, cfg_file, is_auto=True)
+                            if response_data["success"]:
+                                tm_msg = response_data["description"]
+                                slack_msg = response_data["slack_msg"]
+                                export_log(tm_msg, log_path, slack_msg, True)
+                                self.response_data["status"] = "success"
+                                cur_pos = response_data["current_pos"]
+                                # res_data = ["{} Order Placed Successfully.".format(command), cur_pos]
+                                res_data = [tm_msg]
+                            else:
+                                tm_msg = response_data["description"]
+                                export_log(tm_msg, log_path)
+                                # res_data = ["{} Order: {}".format(command, tm_msg.split("\t")[-1])]
+                                res_data = [tm_msg]
+                        else:
+                            res_data = ["The Current Auto Trade Status is Disabled."]
+
+                    except Exception as err:
+                        res_data = ["Failed to place order: {}".format(repr(err))]
+        elif command == 'EXPORT_LOG':
+            data = content['message']
+            print(data["is_notified"])
+
+            cfg_file = os.path.join(trade_config_dir, data["config_file"])
+            if not os.path.exists(cfg_file):
+                res_data = ["Config File not Exists."]
+            else:
+                original_config_dict = {}
+                try:
+                    original_config_dict = get_cfg(cfg_file)
+                    ticker_name = original_config_dict["contract"]["symbol"]
+                    log_file = ticker_name + "_" + datetime.now().strftime("%m_%d_%Y") + ".log"
+                    log_path = os.path.join(log_folder, log_file)
+                    export_log(data["message"], log_path, is_notified=data["is_notified"])
+                    res_data = ["Successfully saved log messages"]
+                    self.response_data["status"] = "success"
+                except:
+                    res_data = ["Invalid Config File."]
+
         else:
             res_data = ["Invalid operation."]
 
