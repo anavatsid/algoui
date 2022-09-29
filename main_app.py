@@ -13,7 +13,7 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 routes.add_routes_to_resource(api)
 api.init_app(app)
 
-
+"""
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -22,7 +22,7 @@ def home():
 @app.route('/history')
 def history():
     return render_template('history.html')
-
+"""
 
 @app.route('/config')
 def tick_config():
