@@ -130,6 +130,7 @@ def process_trade(cfg_dict: dict = None, cfg_file=None, is_auto=False):
         except KeyError as err:
             res_value["description"] = "Please check config."
             return res_value
+        cfg_file_name = os.path.basename(cfg_file)
         predefined_order_dict = get_cfg(cfg_file)
         # print(f"{predefined_order_dict=}")
         contract_dict = predefined_order_dict["contract"]
@@ -164,14 +165,12 @@ def process_trade(cfg_dict: dict = None, cfg_file=None, is_auto=False):
         log_msg = "\n".join([x[0] + "\t" + x[1] for x in total_log])
         now = datetime.now().strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
 
-
         if success:
 
             slack_msg = "{}\t{}\tOrder pre submitted to IB\n{}\t{}".format(contract_dict["symbol"], action_method, order_status[-1][0], order_status[-1][1])
             price = order_status[-1][1].split()[-1]
 
-            meta_info = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(now, contract_dict["symbol"], order_dict["action"],
-                                                            real_qty, price, action_method, final_status)
+            meta_info = "\t".join([now, cfg_file_name, contract_dict["symbol"], order_dict["action"], real_qty, price, action_method, final_status])
             export_meta(meta_info)
             if real_action == "SELL":
                 target_pos = cur_position - real_qty
@@ -189,8 +188,7 @@ def process_trade(cfg_dict: dict = None, cfg_file=None, is_auto=False):
             else:
                 price = "---"
 
-            meta_info = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(now, contract_dict["symbol"], order_dict["action"],
-                                                real_qty, price, action_method, final_status)
+            meta_info = "\t".join([now, cfg_file_name, contract_dict["symbol"], order_dict["action"], real_qty, price, action_method, final_status])
             export_meta(meta_info)
             slack_msg = "{}\t{}\t{}\t{}".format(contract_dict["symbol"], action_method, errors[-1][0], errors[-1][1])
             target_pos = cur_position
@@ -212,8 +210,7 @@ def process_trade(cfg_dict: dict = None, cfg_file=None, is_auto=False):
         return res_value
     else:
         price = "---"
-        meta_info = "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(now, contract_dict["symbol"], order_dict["action"],
-                                    real_qty, price, action_method, "Ignored")
+        meta_info = "\t".join([now, cfg_file_name, contract_dict["symbol"], order_dict["action"], real_qty, price, action_method, "Ignored"])
         export_meta(meta_info)
         ignore_msg = "Trade Ignored due to already existing position"
         now = datetime.now().strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]

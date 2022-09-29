@@ -252,7 +252,8 @@ class MainReceiver(Resource):
             data = content['message']
             ticker_list = get_config_file_list()
             # print(ticker_list)
-            ticker_postion_info = {}
+            symbol_dict = {}
+            position_dict = {}
             postion_info = read_positions()
             for tick in ticker_list:
                 tick_name = get_cfg(os.path.join(trade_config_dir, tick))["contract"]["symbol"]
@@ -265,11 +266,17 @@ class MainReceiver(Resource):
                     # print(f"{target_pos=}")
                 except:
                     ticker_postion = 0
-                ticker_postion_info[tick] = {
-                    "symbol": tick_name,
-                    "position": ticker_postion
-                }
+                symbol_dict[tick] = tick_name
+                position_dict[tick_name] = ticker_postion
+                # {
+                #     "symbol": tick_name,
+                #     "position": ticker_postion
+                # }
 
+            ticker_postion_info = {
+                "symbols": symbol_dict,
+                "positions": position_dict
+            }
             global_enabled = get_global_flag()
             res_data = [ticker_list, ticker_postion_info, global_enabled]
             # print(res_data)

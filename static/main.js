@@ -168,7 +168,9 @@ function disable_ui() {
         // disable_ui();
         global_flag = document.getElementById("trade_enable").checked;
         ticker_name = document.getElementById("tick").value;
-        selected_ticker_position = tick_info[ticker_name]["position"];
+        selected_symbol = tick_info["symbols"][ticker_name];
+        selected_ticker_position = tick_info["positions"][selected_symbol];
+
         $("#contract_position").val(selected_ticker_position);
         selected_index = document.getElementById("tick").selectedIndex;
         console.log("selected index : ", selected_index);
