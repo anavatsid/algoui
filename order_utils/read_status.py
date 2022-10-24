@@ -1,14 +1,20 @@
+import os
+import pandas as pd
+import time
+
+from ibapi.client import EClient
+from ibapi.wrapper import EWrapper
+from ibapi.common import TickerId
+from threading import Thread, Timer
+
+from dotenv import load_dotenv
+load_dotenv()
+ibgw_ip_address = os.environ.get('IB_GATEWAY_IP', '127.0.0.1')
+ibgw_port_num = int(os.environ.get('IB_GATEWAY_PORT', '4002'))
+ibgw_client_num = int(os.environ.get('IB_GATEWAY_CLIENTS', '8'))
+
 
 def read_positions(target_symbol=None):  # read all accounts positions and return DataFrame with information
-
-    from ibapi.client import EClient
-    from ibapi.wrapper import EWrapper
-    from ibapi.common import TickerId
-    from threading import Thread, Timer
-
-    import pandas as pd
-    import time
-
     class ib_class(EWrapper, EClient):
 
         def __init__(self):
@@ -26,6 +32,7 @@ def read_positions(target_symbol=None):  # read all accounts positions and retur
             if target_symbol == contract.symbol:
                 self.stop()
                 self.success = True
+                # print("\nSAmm============\n")
 
         def pnl(self, reqId: int, dailyPnL: float,
                       unrealizedPnL: float, realizedPnL: float):
@@ -40,7 +47,7 @@ def read_positions(target_symbol=None):  # read all accounts positions and retur
         app.run()
 
     app = ib_class()
-    app.connect('127.0.0.1', 4002, 11)
+    app.connect('127.0.0.1', 4002, 8)
     # Start the socket in a thread
     api_thread = Thread(target=run_loop, daemon=True)
     api_thread.start()
@@ -57,6 +64,7 @@ def read_positions(target_symbol=None):  # read all accounts positions and retur
         time.sleep(0.5)
     
     current_positions = app.all_positions
+    # print(current_positions, "\n")
     current_positions.set_index('Account', inplace=True, drop=True)  # set all_positions DataFrame index to "Account"
     app.disconnect()
 
@@ -65,10 +73,10 @@ def read_positions(target_symbol=None):  # read all accounts positions and retur
 
 if __name__ == "__main__":
     print("Testing IB's API as an imported library:")
-    # for _ in range(15):
+    for _ in range(1):
         
-    #     all_positions = read_positions("AAPL")
-    #     print(all_positions)
-    #     print()
+        all_positions = read_positions("AAPL")
+        print(all_positions)
+        print()
     # all_navs = read_navs()
     # print(all_navs)

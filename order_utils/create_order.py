@@ -12,13 +12,23 @@ from ibapi.contract import Contract
 from ibapi.order import *
 from threading import Timer, Thread
 import configparser
+from dotenv import load_dotenv
+load_dotenv()
+ibgw_ip_address = os.environ.get('IB_GATEWAY_IP', '127.0.0.1')
+ibgw_port_num = int(os.environ.get('IB_GATEWAY_PORT', '4002'))
+ibgw_client_num = int(os.environ.get('IB_GATEWAY_CLIENTS', '8'))
 
+print(ibgw_ip_address, ibgw_port_num, ibgw_client_num)
 
 def get_cfg(config_path):
     config = configparser.ConfigParser()
     config.read([config_path])
+    ticker_name = os.path.basename(config_path)[:-4]
     _dict_ = {
-        "contract": dict(config.items("contract")),
+        "contract": {
+            **dict(config.items("contract")),
+            'ticker_name': dict(config.items("contract"))['symbol'] # ticker_name
+        },
         "order": dict(config.items("order"))
     }
     return _dict_
@@ -86,7 +96,7 @@ class OrderApp(EWrapper, EClient):
     def start(self):
         contract = Contract()
         # print("contract config = ", self.contract_config)
-        contract.symbol = self.contract_config["symbol"]
+        contract.symbol = self.contract_config["ticker_name"]
         contract.secType = self.contract_config["sectype"]
         contract.exchange = self.contract_config["exchange"]
         contract.currency = self.contract_config["currency"]
@@ -117,7 +127,7 @@ def place_order(contract_dict: dict, order_dict: dict):
 
     app = OrderApp(contract_dict, order_dict)
     app.nextOrderId = 0
-    app.connect("127.0.0.1", 4002, 11)
+    app.connect(ibgw_ip_address, ibgw_port_num, ibgw_client_num)
     # Start the socket in a thread
     # api_thread = Thread(target=app.run, daemon=True)
     # api_thread.start()
