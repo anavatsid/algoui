@@ -99,6 +99,7 @@ class MainReceiver(Resource):
                         log_path = os.path.join(log_folder, log_file)
 
                         response_data = process_trade(cfg_dict, cfg_file)
+                        print(response_data)
                         if response_data["success"]:
                             tm_msg = response_data["description"]
                             slack_msg = response_data["slack_msg"]
@@ -109,7 +110,7 @@ class MainReceiver(Resource):
                         else:
                             slack_msg = response_data["slack_msg"]
                             tm_msg = response_data["description"]
-                            export_log(tm_msg, log_path)
+                            export_log(tm_msg, log_path, is_notified=True)
                             res_data = ["{} Order: {}".format(action_type, tm_msg.split("\t")[-1])]
                     except Exception as err:
                         print(repr(err))
@@ -279,6 +280,7 @@ class MainReceiver(Resource):
             }
             global_enabled = get_global_flag()
             res_data = [ticker_list, ticker_postion_info, global_enabled]
+            print(ticker_postion_info)
             # print(res_data)
             self.response_data["status"] = "success"
 

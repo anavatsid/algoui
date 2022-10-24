@@ -166,7 +166,8 @@ function disable_ui() {
     // ticker chagned
     $("#tick").change(function(){
         // disable_ui();
-        global_flag = document.getElementById("trade_enable").checked;
+        console.log(tick_info);
+        // global_flag = document.getElementById("trade_enable").checked;
         ticker_name = document.getElementById("tick").value;
         selected_symbol = tick_info["symbols"][ticker_name];
         selected_ticker_position = tick_info["positions"][selected_symbol];
@@ -227,21 +228,27 @@ function disable_ui() {
             data: JSON.stringify(data),
             dataType: "json",
             success: function (response) {
-                // console.log(response)
+                console.log("response is :", response)
                 if (response["status"] == "success") {
-                    if (data["command"] == "REVERSE") {
-                        $("#log").val(response["message"][0]);
-                        $("#contract_position").val(response["message"][1])
-                    } else if (data["command"] == "BUY") {
-                        $("#log").val(response["message"][0]);
-                        $("#contract_position").val(response["message"][1])
-                    } else if (data["command"] == "SELL") {
-                        $("#log").val(response["message"][0]);
-                        $("#contract_position").val(response["message"][1])
-                    } else if (data["command"] == "FLATTEN") {
-                        $("#log").val(response["message"][0]);
-                        $("#contract_position").val(response["message"][1])
-                    }
+                    if (data["command"] == "MANUAL_ORDER") {
+                        order_data = data["message"]
+                        if (order_data["action"] == "REVERSE") {
+                            $("#log").val(response["message"][0]);
+                            $("#contract_position").val(response["message"][1])
+                        } else if (order_data["action"] == "BUY") {
+                            $("#log").val(response["message"][0]);
+                            $("#contract_position").val(response["message"][1])
+                        } else if (order_data["action"] == "SELL") {
+                            $("#log").val(response["message"][0]);
+                            $("#contract_position").val(response["message"][1])
+                        } else if (order_data["action"] == "FLATTEN") {
+                            $("#log").val(response["message"][0]);
+                            $("#contract_position").val(response["message"][1])
+                        }
+                        ticker_name = document.getElementById("tick").value;
+                        selected_symbol = tick_info["symbols"][ticker_name];
+                        tick_info["positions"][selected_symbol] = response["message"][1]
+                    };
                     // update_history();
                 }
                 else {

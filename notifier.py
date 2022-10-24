@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 slack_webhook_url = os.environ.get('SLACK_NOTIFICATION_URL', '')
 slack_webhook_channel = os.environ.get('SLACK_NITIFICATION_CHANNEL', '')
-
+web_port_num = os.environ.get('PORT_NUM', '5000')
 
 def send_notification_api(data):
     sms_data = {'text': data}

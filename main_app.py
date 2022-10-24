@@ -6,6 +6,7 @@ from flask import Flask, render_template, make_response, request
 import routes
 import json
 from process_ui import get_config_file_list
+from notifier import web_port_num
 
 app = Flask(__name__)
 api = Api()
@@ -13,7 +14,7 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 routes.add_routes_to_resource(api)
 api.init_app(app)
 
-"""
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -22,7 +23,7 @@ def home():
 @app.route('/history')
 def history():
     return render_template('history.html')
-"""
+
 
 @app.route('/config')
 def tick_config():
@@ -59,4 +60,4 @@ def tick_config():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=False, port=8088)
+    app.run(host='0.0.0.0', debug=False, port=int(web_port_num))

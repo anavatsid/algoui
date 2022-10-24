@@ -21,14 +21,14 @@ def get_cfg(config_path):
         "contract": dict(config.items("contract")),
         "order": dict(config.items("order"))
     }
-    # print(f"{_dict_=}")
     return _dict_
 
 
-class OrderAPP(EWrapper, EClient):
-    def __init__(self, contract_config: dict, order_config: dict = None):
+class OrderApp(EWrapper, EClient):
+    def __init__(self, contract_config: dict = None, order_config: dict = None):
         EClient.__init__(self, self)
-        self.contract_config = contract_config  # get_cfg(contract_config_path)
+        self.is_working = False
+        self.contract_config = contract_config
         self.order_config = order_config
         self.error_msg = [] #  pd.DataFrame([], columns=["ReqId", "ErrorCode", "ErrorMsg"])
         self.orderStatus_msg = []  # pd.DataFrame([], columns=["Id", "Status", "Filled", "Remaining", "LastFillPrice"])
@@ -38,16 +38,17 @@ class OrderAPP(EWrapper, EClient):
                                                          # "Exec OrderId", "Exec Shares", "Last Liquidity"])
         self.success = False
         self.final_status = "Failed"
-
+        # self.init_para()
+ 
+    def nextValidId(self, orderId):
+        self.nextOrderId = orderId
+        self.start()
+ 
     def error(self, reqId , errorCode, errorString):
         msg = "Error: {}, {}, {}".format(reqId, errorCode, errorString)
         # length = len(self.error_msg)
         now = datetime.now().strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
         self.error_msg.append([now, msg])
-
-    def nextValidId(self, orderId ):
-        self.nextOrderId = orderId
-        self.start()
 
     def orderStatus(self, orderId , status, filled, remaining, avgFillPrice, permId,
                     parentId, lastFillPrice, clientId, whyHeld, mktCapPrice):
@@ -84,7 +85,7 @@ class OrderAPP(EWrapper, EClient):
 
     def start(self):
         contract = Contract()
-        print("contract config = ", self.contract_config)
+        # print("contract config = ", self.contract_config)
         contract.symbol = self.contract_config["symbol"]
         contract.secType = self.contract_config["sectype"]
         contract.exchange = self.contract_config["exchange"]
@@ -94,7 +95,7 @@ class OrderAPP(EWrapper, EClient):
         # contract.waitToPlaceTrade = self.contract_config["waittoplacetrade"]
 
         order = Order()
-        print("order config = ", self.order_config)
+        # print("order config = ", self.order_config)
         order.action = self.order_config["action"]
         order.totalQuantity = self.order_config["qty"]
         if "ordertype" in self.order_config:
@@ -105,7 +106,7 @@ class OrderAPP(EWrapper, EClient):
         order.transmit = True
 
         self.placeOrder(self.nextOrderId, contract, order)
-        # print(self.contract_config["contract"]["asd"])
+
 
     def stop(self):
         self.done = True
@@ -114,7 +115,7 @@ class OrderAPP(EWrapper, EClient):
 
 def place_order(contract_dict: dict, order_dict: dict):
 
-    app = OrderAPP(contract_dict, order_dict)
+    app = OrderApp(contract_dict, order_dict)
     app.nextOrderId = 0
     app.connect("127.0.0.1", 4002, 11)
     # Start the socket in a thread
@@ -125,16 +126,12 @@ def place_order(contract_dict: dict, order_dict: dict):
     Timer(5, app.stop).start()
     app.run()
 
-
     order_status = app.orderStatus_msg  # .drop_duplicates(ignore_index=True)
     open_order = app.openOrder_msg
     exec_detail = app.execDetails_msg
     errors = app.error_msg
     app.disconnect()
-    # print(f"{order_status=}")
-    # print(f"{open_order=}")
-    # print(f"{exec_detail=}")
-    # print(f"{errors=}")
+
     return app.success, open_order, order_status, exec_detail, errors, app.final_status
 
 
